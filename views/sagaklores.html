@@ -1,0 +1,36 @@
+<!doctype html>
+<html lang="ru">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<meta name="color-scheme" content="dark">
+<meta name="theme-color" content="#000000">
+<meta name="robots" content="noindex,nofollow">
+<title>.боб</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Manrope:wght@300;400;500;600;700&display=swap">
+<link rel="stylesheet" href="/style.css">
+</head>
+<body data-page="gate">
+<main class="gate">
+  <div class="lever" id="lever">
+    <div class="track" id="track">
+      <span class="fill"></span>
+      <div class="knob" id="knob" role="slider" tabindex="0" aria-label="Рычаг" aria-orientation="vertical" aria-valuemin="0" aria-valuemax="100" aria-valuenow="0"><i></i></div>
+    </div>
+  </div>
+</main>
+<div class="modal" id="modal" role="dialog" aria-modal="true" aria-labelledby="q" hidden>
+  <div class="card">
+    <p id="q">Вы уверены, что хотите продолжить?</p>
+    <div class="row">
+      <button class="btn main" id="yes" type="button">ПРОДОЛЖИТЬ</button>
+      <button class="btn" id="no" type="button">ОТМЕНА</button>
+    </div>
+  </div>
+</div>
+<div class="veil"></div>
+<script src="/script.js" defer></script>
+</body>
+</html>
