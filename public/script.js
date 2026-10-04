@@ -50,6 +50,24 @@
     });
   }
 
+  // Состояние общее для всех: если оно изменилось, пока страница открыта, — плавно уходим в чёрный и перезагружаемся.
+  function watch(isOn, busy = () => false) {
+    let leaving = false;
+    const check = async () => {
+      if (leaving || document.hidden || busy()) return;
+      try {
+        const r = await fetch('/api/state', { cache: 'no-store' });
+        if ((await r.json()).active === isOn) return;
+        leaving = true;
+        document.body.classList.add('leave');
+        await wait(1000);
+        location.reload();
+      } catch (_) {}
+    };
+    setInterval(check, 6000);
+    document.addEventListener('visibilitychange', check);
+  }
+
   addEventListener('pageshow', e => { if (e.persisted) location.reload(); });
   // мягкий свет за курсором (только мышь)
   function spotlight() {
@@ -84,6 +102,7 @@
 
   function home() {
     const boot = JSON.parse(document.getElementById('boot').textContent);
+    watch(boot.mode === 'alt');
     const app = document.getElementById('app');
     const wm = watermark(boot.water || '');
 
@@ -188,7 +207,8 @@
   function gate() {
     const $ = id => document.getElementById(id);
     const lever = $('lever'), track = $('track'), knob = $('knob'), modal = $('modal'), yes = $('yes'), no = $('no');
-    let p = 0, travel = 1, drag = null, locked = false, raf = 0, lastTick = 0;
+    const on = document.body.dataset.on === '1', rest = on ? 1 : 0, goal = 1 - rest;   // on — режим активен, рычаг внизу
+    let p = rest, travel = 1, drag = null, locked = false, raf = 0, lastTick = 10 * rest;
 
     const set = v => {
       p = Math.min(1, Math.max(0, v));
@@ -202,10 +222,10 @@
 
     const back = () => {                           // плавный возврат в 0%
       cancelAnimationFrame(raf);
-      const from = p, t0 = performance.now(), dur = RM ? 1 : 260 + 640 * from;
+      const from = p, t0 = performance.now(), dur = RM ? 1 : 260 + 640 * Math.abs(from - rest);
       const step = now => {
         const t = Math.min(1, (now - t0) / dur);
-        set(from * Math.pow(1 - t, 3));
+        set(rest + (from - rest) * Math.pow(1 - t, 3));
         if (t < 1) raf = requestAnimationFrame(step);
       };
       raf = requestAnimationFrame(step);
@@ -217,7 +237,7 @@
     };
     const reach = () => {                          // 100% → сначала предупреждение
       locked = true; drag = null; lever.classList.remove('drag');
-      cancelAnimationFrame(raf); set(1);
+      cancelAnimationFrame(raf); set(goal);
       if (navigator.vibrate) navigator.vibrate([40, 30, 80]);
       openModal();
     };
@@ -233,7 +253,7 @@
     knob.addEventListener('pointermove', e => {
       if (!drag) return;
       set(drag.p + (e.clientY - drag.y) / travel);
-      if (p >= 0.985) reach();
+      if (Math.abs(p - goal) <= 0.015) reach();
     });
     const end = () => { if (!drag) return; drag = null; lever.classList.remove('drag'); back(); };
     knob.addEventListener('pointerup', end);
@@ -245,7 +265,7 @@
       if (e.key === 'End') { e.preventDefault(); return reach(); }
       if (!m) return;
       e.preventDefault(); cancelAnimationFrame(raf); set(p + m);
-      if (p >= 0.985) reach();
+      if (Math.abs(p - goal) <= 0.015) reach();
     });
     knob.addEventListener('keyup', () => { if (!locked && !drag) back(); });
 
@@ -259,10 +279,10 @@
     yes.onclick = async () => {                    // ПРОДОЛЖИТЬ: сохранить → fade-out → /
       yes.disabled = no.disabled = true;
       try {
-        const r = await fetch('/api/activate', { method: 'POST', credentials: 'same-origin' });
+        const r = await fetch(on ? '/api/deactivate' : '/api/activate', { method: 'POST', credentials: 'same-origin' });
         if (!r.ok) throw new Error();
       } catch (_) {
-        document.cookie = 'mode=alt; max-age=31536000; path=/; samesite=lax';
+        yes.disabled = no.disabled = false; return no.click();
       }
       document.body.classList.add('leave');
       await wait(1100);
@@ -271,6 +291,7 @@
 
     addEventListener('resize', measure);
     measure();
+    watch(on, () => !!drag || locked);
     requestAnimationFrame(() => document.body.classList.add('ready'));
   }
 })();
