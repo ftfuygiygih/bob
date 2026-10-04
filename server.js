@@ -18,11 +18,11 @@ app.get('/', (req, res) => {
   const alt = isAlt(req);
   // В альтернативном состоянии обычные тексты на клиент вообще не отправляются.
   const boot = alt
-    ? { mode: 'alt', main: text('4.txt'), water: text('water2.txt') }
+    ? { mode: 'alt', main: text('alt.txt'), water: text('water2.txt') }
     : {
         mode: 'normal',
         water: text('water.txt'),
-        sections: { bob: text('1.txt'), channel: text('2.txt'), chat: text('3.txt') },
+        sections: { bob: text('1.txt'), channel: text('2.txt'), chat: text('3.txt'), iscream: text('4.txt'), velsio: text('5.txt'), creator: text('6.txt') },
         links: { channel: CONFIG.telegramChannel, chat: CONFIG.telegramChat }
       };
   const html = fs.readFileSync(dir('views', 'index.html'), 'utf8')
